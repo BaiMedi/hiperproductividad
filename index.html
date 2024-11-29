@@ -118,6 +118,7 @@
     <div class="summary">
         <h2>Tu Semana Planificada</h2>
         <p id="summary-output">¡Planifica tu semana para ver un resumen aquí!</p>
+        <p id="suggestions-output"></p>
     </div>
 
     <div class="cta-section">
@@ -134,7 +135,11 @@
                 input.type = 'text';
                 input.placeholder = 'Escribe aquí...';
                 input.addEventListener('blur', () => {
-                    cell.textContent = input.value || '';
+                    const task = input.value.trim();
+                    cell.textContent = task;
+                    if (task) {
+                        generateSuggestions();
+                    }
                 });
                 cell.textContent = '';
                 cell.appendChild(input);
@@ -142,9 +147,31 @@
             }
         });
     });
+
+    function generateSuggestions() {
+        const tasks = Array.from(document.querySelectorAll('.task-cell'))
+            .map(cell => cell.textContent.trim())
+            .filter(task => task);
+        
+        const suggestions = [];
+        
+        if (tasks.includes("Reunión")) {
+            suggestions.push("Sugerencia: Bloquea tiempo después de la reunión para procesar notas.");
+        }
+        if (tasks.includes("Ejercicio")) {
+            suggestions.push("Sugerencia: Programa ejercicio en la mañana para mantener energía durante el día.");
+        }
+        if (tasks.includes("Estudio")) {
+            suggestions.push("Sugerencia: Dedica bloques de 25 minutos siguiendo la técnica Pomodoro.");
+        }
+        if (tasks.length === 0) {
+            suggestions.push("Añade tus tareas para recibir sugerencias personalizadas.");
+        }
+
+        const suggestionsOutput = document.getElementById('suggestions-output');
+        suggestionsOutput.innerHTML = suggestions.map(suggestion => `<p>${suggestion}</p>`).join('');
+    }
 </script>
 
 </body>
 </html>
-
-
