@@ -21,12 +21,9 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        h1, h2 {
+        h1 {
             text-align: center;
             color: #22C0DC;
-        }
-        h1 {
-            margin-bottom: 1rem;
         }
         .instruction {
             text-align: center;
@@ -54,15 +51,29 @@
             background-color: #f0f8ff;
             cursor: pointer;
         }
-        .task-cell.editable {
-            background-color: #e6ffee;
-        }
         .task-cell input {
             width: 100%;
             border: none;
             outline: none;
             font-size: 1rem;
             font-family: 'Sora', sans-serif;
+        }
+        .button-container {
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        .generate-btn {
+            background-color: #22C0DC;
+            color: #fff;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .generate-btn:hover {
+            background-color: #1a99b6;
         }
         .summary {
             margin-top: 2rem;
@@ -94,7 +105,7 @@
 
 <div class="container">
     <h1>Diseña tu Semana Ideal</h1>
-    <p class="instruction">Haz clic en las casillas para añadir tus tareas. Identifica bloqueadores y visualiza cómo ganar tiempo.</p>
+    <p class="instruction">Haz clic en las casillas para añadir tus tareas diarias. Luego pulsa en "Tu Semana Planificada" para ver el resumen y las sugerencias.</p>
 
     <div class="grid">
         <div class="day">Lunes</div>
@@ -106,19 +117,22 @@
         <div class="day">Domingo</div>
         
         <!-- Interactive Cells -->
-        <div class="task-cell editable" data-day="Lunes"></div>
-        <div class="task-cell editable" data-day="Martes"></div>
-        <div class="task-cell editable" data-day="Miércoles"></div>
-        <div class="task-cell editable" data-day="Jueves"></div>
-        <div class="task-cell editable" data-day="Viernes"></div>
-        <div class="task-cell editable" data-day="Sábado"></div>
-        <div class="task-cell editable" data-day="Domingo"></div>
+        <div class="task-cell" data-day="Lunes"></div>
+        <div class="task-cell" data-day="Martes"></div>
+        <div class="task-cell" data-day="Miércoles"></div>
+        <div class="task-cell" data-day="Jueves"></div>
+        <div class="task-cell" data-day="Viernes"></div>
+        <div class="task-cell" data-day="Sábado"></div>
+        <div class="task-cell" data-day="Domingo"></div>
     </div>
 
-    <div class="summary">
-        <h2>Tu Semana Planificada</h2>
-        <p id="summary-output">¡Planifica tu semana para ver un resumen aquí!</p>
-        <p id="suggestions-output"></p>
+    <div class="button-container">
+        <button class="generate-btn" id="generate-summary">Tu Semana Planificada</button>
+    </div>
+
+    <div class="summary" id="summary-section">
+        <h2>Resumen de tu Semana</h2>
+        <p id="summary-output">Aquí aparecerá el análisis de tus tareas.</p>
     </div>
 
     <div class="cta-section">
@@ -128,6 +142,8 @@
 </div>
 
 <script>
+    const tasks = {};
+
     document.querySelectorAll('.task-cell').forEach(cell => {
         cell.addEventListener('click', () => {
             if (!cell.querySelector('input')) {
@@ -136,10 +152,12 @@
                 input.placeholder = 'Escribe aquí...';
                 input.addEventListener('blur', () => {
                     const task = input.value.trim();
-                    cell.textContent = task;
+                    const day = cell.getAttribute('data-day');
                     if (task) {
-                        generateSuggestions();
+                        tasks[day] = tasks[day] || [];
+                        tasks[day].push(task);
                     }
+                    cell.textContent = tasks[day]?.join(', ') || '';
                 });
                 cell.textContent = '';
                 cell.appendChild(input);
@@ -148,29 +166,38 @@
         });
     });
 
-    function generateSuggestions() {
-        const tasks = Array.from(document.querySelectorAll('.task-cell'))
-            .map(cell => cell.textContent.trim())
-            .filter(task => task);
-        
-        const suggestions = [];
-        
-        if (tasks.includes("Reunión")) {
-            suggestions.push("Sugerencia: Bloquea tiempo después de la reunión para procesar notas.");
-        }
-        if (tasks.includes("Ejercicio")) {
-            suggestions.push("Sugerencia: Programa ejercicio en la mañana para mantener energía durante el día.");
-        }
-        if (tasks.includes("Estudio")) {
-            suggestions.push("Sugerencia: Dedica bloques de 25 minutos siguiendo la técnica Pomodoro.");
-        }
-        if (tasks.length === 0) {
-            suggestions.push("Añade tus tareas para recibir sugerencias personalizadas.");
+    document.getElementById('generate-summary').addEventListener('click', () => {
+        const output = document.getElementById('summary-output');
+        output.innerHTML = '';
+
+        if (Object.keys(tasks).length === 0) {
+            output.innerHTML = '<p>No has añadido ninguna tarea. ¡Planifica ahora!</p>';
+            return;
         }
 
-        const suggestionsOutput = document.getElementById('suggestions-output');
-        suggestionsOutput.innerHTML = suggestions.map(suggestion => `<p>${suggestion}</p>`).join('');
-    }
+        let analysis = '';
+        let totalTasks = 0;
+
+        for (const [day, dayTasks] of Object.entries(tasks)) {
+            totalTasks += dayTasks.length;
+            analysis += `<p><strong>${day}:</strong> ${dayTasks.join(', ')}</p>`;
+        }
+
+        const avgTasks = (totalTasks / 7).toFixed(1);
+
+        analysis += `<p><strong>Total de tareas:</strong> ${totalTasks}</p>`;
+        analysis += `<p><strong>Tareas promedio por día:</strong> ${avgTasks}</p>`;
+
+        if (avgTasks < 3) {
+            analysis += `<p><span style="color: red;">Parece que podrías estar subutilizando tu tiempo. ¡Intenta añadir más tareas clave!</span></p>`;
+        } else if (avgTasks > 5) {
+            analysis += `<p><span style="color: orange;">Cuidado: podrías estar sobresaturando tu semana. Evalúa tus prioridades.</span></p>`;
+        } else {
+            analysis += `<p><span style="color: green;">¡Buena planificación! Estás en un rango ideal de tareas.</span></p>`;
+        }
+
+        output.innerHTML = analysis;
+    });
 </script>
 
 </body>
